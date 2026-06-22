@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>excuse-generator</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #141414;
+    --border: #222;
+    --text: #ffffff;
+    --muted: #888;
+    --accent: rgba(57, 255, 20, 0.8); /* muted toxic green */
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  main {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .label {
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+
+  .tagline {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0.5rem 0 0 0;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    height: 1px;
+    margin: 1.25rem 0;
+  }
+
+  .excuse-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    min-height: 100px;
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.8;
+    display: flex;
+    align-items: center;
+  }
+
+  .excuse-box.placeholder {
+    color: var(--accent);
+  }
+
+  .excuse-text.reveal {
+    animation: fadeIn 200ms ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .counter {
+    color: var(--muted);
+    font-size: 12px;
+    margin: 0.75rem 0 1.25rem 0;
+    text-align: center;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  button {
+    flex: 1;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+  }
+
+  .btn-primary {
+    border: 1px solid var(--accent);
+  }
+  .btn-primary:hover,
+  .btn-primary:focus-visible {
+    color: var(--accent);
+    background: rgba(57, 255, 20, 0.06);
+    outline: none;
+  }
+
+  .btn-secondary {
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-secondary:hover,
+  .btn-secondary:focus-visible {
+    color: var(--text);
+    border-color: #444;
+    outline: none;
+  }
+
+  .share {
+    margin-top: 1.25rem;
+    text-align: center;
+  }
+
+  .share a {
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .share a:hover {
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+<main>
+  <p class="label">EXCUSE GENERATOR</p>
+  <p class="tagline">for when the build is on fire and you need something to say</p>
+
+  <hr />
+
+  <div id="excuseBox" class="excuse-box placeholder">
+    <span id="excuseText" class="excuse-text">[ awaiting incident... ]</span>
+  </div>
+
+  <p id="counter" class="counter"></p>
+
+  <div class="buttons">
+    <button id="generateBtn" class="btn-primary">GENERATE EXCUSE</button>
+    <button id="copyBtn" class="btn-secondary">COPY TO CLIPBOARD</button>
+  </div>
+
+  <p class="share">
+    <a id="shareLink" role="button" tabindex="0">SHARE THIS EXCUSE &rarr;</a>
+  </p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ------------------------------------------------------------------ *
+   * Word banks
+   * ------------------------------------------------------------------ */
+
+  var subjects = [
+    // CI/CD and developer tooling
+    "Jenkins", "the pipeline", "the deploy script", "the Dockerfile",
+    "Kubernetes", "the load balancer", "Terraform", "the cron job",
+    "the GitHub Action", "the staging environment", "the rollback script",
+    "the feature flag", "the config file", "the build cache", "the linter",
+    "the test suite",
+    // databases and data
+    "the database migration", "the query planner", "the ORM",
+    "the connection pool", "the Redis cache", "the message queue",
+    "the event bus", "the data pipeline", "the schema", "the index",
+    // frontend and APIs
+    "the API gateway", "the CDN", "the reverse proxy",
+    "the WebSocket connection", "the service worker", "the bundle",
+    "the hydration step", "the CSS specificity", "the type definitions",
+    "the polyfill",
+    // abstract software concepts
+    "the race condition", "the memory leak", "the circular dependency",
+    "the off-by-one error", "the null pointer", "the technical debt",
+    "the undocumented behaviour", "the edge case",
+    "the assumption in the original design",
+    // more infrastructure and tooling
+    "the helm chart", "the nginx config", "the service mesh",
+    "the autoscaler", "the webhook handler", "the rate limiter",
+    "the OAuth flow", "the JWT validator", "the background worker",
+    "the job scheduler", "the health check endpoint", "the readiness probe",
+    "the sidecar container", "the ingress controller", "the secrets manager",
+    "the artifact registry", "the DNS resolver", "the SSL certificate"
+  ];
+
+  var pastVerbs = [
+    "fell over", "stopped responding", "achieved sentience", "went on strike",
+    "filed a complaint", "entered an undefined state",
+    "exceeded all expectations (in the wrong direction)",
+    "took a philosophical stance", "violated its own contract",
+    "started logging in a dead language", "began accepting bribes",
+    "unionised", "adopted a new religion", "refused to gc",
+    "sent passive-aggressive metrics", "staged an intervention",
+    "quietly deprecated itself", "started questioning its own existence",
+    "elected a new leader",
+    "ran out of patience", "timed out spectacularly", "crashed without ceremony",
+    "silently corrupted itself", "developed trust issues",
+    "stopped returning calls", "went dark without warning",
+    "declared bankruptcy", "requested a sabbatical", "ghosted the entire team",
+    "rewrote itself in a worse language", "demanded a code review",
+    "formed a committee", "escalated to itself", "ignored every retry",
+    "panicked in production", "buffered indefinitely",
+    "gave up halfway through", "returned an error nobody had seen before",
+    "looped until the end of time", "forgot why it existed",
+    "threw an exception out of spite"
+  ];
+
+  var presentStates = [
+    "operating in a state of controlled chaos",
+    "renegotiating its SLA with itself", "in active denial",
+    "deeply confused about its own timezone",
+    "philosophically opposed to the current sprint goal",
+    "running in compatibility mode with 2009",
+    "experiencing an existential timeout",
+    "on a learning journey that wasn't approved by the change board",
+    "holding the thread pool hostage", "allergic to the current environment",
+    "stuck in an infinite retry loop",
+    "waiting on a lock that will never release",
+    "emotionally invested in the legacy code",
+    "refusing to acknowledge the new schema",
+    "quietly leaking memory out of habit",
+    "convinced it is still in staging",
+    "negotiating peace with the garbage collector",
+    "haunted by a deprecated API", "buffering its own feelings",
+    "running entirely on optimism",
+    "stuck between two incompatible versions",
+    "in a recursive state of self-doubt",
+    "pretending the cache is still valid",
+    "mid-existential-crisis about its purpose",
+    "contractually obligated to the old behaviour",
+    "experiencing latency it refuses to explain",
+    "locked in a debate with the load balancer",
+    "operating well outside its documented limits",
+    "silently dropping packets to cope",
+    "waiting for a callback that will never come",
+    "actively avoiding the monitoring dashboard"
+  ];
+
+  var infinitiveVerbs = [
+    "fail silently", "restart indefinitely", "invalidate the cache",
+    "reject all input", "consume all available memory",
+    "question its own configuration", "lose track of time",
+    "forget its own state", "process requests in reverse chronological order",
+    "return null with no explanation", "log everything except what you need",
+    "crash on the happy path", "ignore every timeout setting",
+    "duplicate every message exactly once",
+    "retry until the heat death of the universe",
+    "deadlock on a single request",
+    "leak connections faster than it closes them",
+    "corrupt the cache on write", "swallow exceptions without a trace",
+    "escalate a warning into an outage",
+    "round every number in the wrong direction",
+    "serve stale data with confidence", "panic over a missing semicolon",
+    "block the main thread out of principle",
+    "overwrite the backup with nothing", "respond only to requests it likes",
+    "drop the first event every time", "recompute everything from scratch",
+    "hang on shutdown indefinitely", "emit metrics nobody asked for",
+    "reorder the queue for no reason"
+  ];
+
+  var rootCauses = [
+    // cosmic / absurd
+    "Mercury being in retrograde",
+    "a solar flare hitting the data centre at an inopportune moment",
+    "a butterfly effect originating from a misconfigured router in 2014",
+    "the laws of thermodynamics",
+    "the heat death of the universe beginning slightly earlier than forecast",
+    "a quantum superposition collapsing at the worst possible time",
+    "a leap second nobody accounted for",
+    "the moon being in the wrong phase for distributed systems",
+    "gremlins, statistically speaking",
+    "entropy doing exactly what entropy does",
+    "a cosmic ray flipping a single bit in memory",
+    "the universe failing to maintain referential integrity",
+    "time itself being a flat circle in the scheduler",
+    "a full moon coinciding with the release window",
+    // process / org
+    "the sprint being too optimistic from the start",
+    "a stakeholder changing requirements mid-deploy",
+    "the ticket being marked Done before it was tested",
+    "the architecture decision record being ignored",
+    "a hotfix applied directly to production at 4:58pm on a Friday",
+    "the postmortem action items never being actioned",
+    "an undocumented dependency introduced six months ago by someone who has since left",
+    "the on-call rotation not covering this particular category of failure",
+    "the runbook being last updated in 2021",
+    "the planning poker estimate being aspirational",
+    "a requirement discovered only during the demo",
+    "scope creep that arrived disguised as a quick win",
+    "the Definition of Done being more of a suggestion",
+    "a meeting that should have been an email blocking the deploy",
+    "the change freeze being lifted one hour too early",
+    "ownership of the service being genuinely unknown",
+    "the SLA being agreed before anyone read it",
+    "a dependency on a team that is currently on a retreat",
+    "the backlog being groomed into a jungle",
+    "a decision made in a Slack thread nobody can find",
+    "the migration plan existing only in someone's head",
+    "the rollback plan being \"we'll figure it out\"",
+    "approval being stuck in someone's inbox",
+    // technical absurdity
+    "the DNS not propagating yet (it's been three weeks)",
+    "it working fine on localhost", "a trailing whitespace in a YAML file",
+    "tabs and spaces coexisting in the same config file",
+    "a library pinned to a version that no longer exists",
+    "a certificate expiring on a Sunday",
+    "the wrong environment variable being set in only one of the three places it's defined",
+    "a regex that works in every language except the one being used",
+    "a comment in the code that says \"this should never happen\"",
+    "a timezone that observes daylight saving for only half the year",
+    "an off-by-one in the retry budget",
+    "a feature flag that defaults to on in exactly one region",
+    "a cache key collision nobody thought possible",
+    "a floating point comparison that was technically correct",
+    "a Unicode character that looks identical to an ASCII one",
+    "a semicolon that was load-bearing",
+    "a dependency upgrade that changed one default silently",
+    "a clock skew of exactly enough milliseconds",
+    "a null that propagated three services deep",
+    "a retry storm caused by a single slow response",
+    "an emoji in a log line breaking the parser",
+    "a BOM at the start of a config file",
+    "a 200 OK that secretly contained an error",
+    "a connection pool sized for a demo",
+    "a regex catastrophically backtracking on real input",
+    "a hardcoded value that outlived its purpose",
+    "a flaky test that was marked as passing",
+    // human factors (self-deprecating, never targeting individuals)
+    "the developer running it for the first time in six months",
+    "the assumption that this environment was identical to the last one",
+    "an optimistic estimate that has since been revised",
+    "the documentation being aspirational rather than accurate",
+    "copy-pasting the wrong snippet from Stack Overflow",
+    "a unit test that only passes on the machine it was written on",
+    "the assumption that staging mirrors production",
+    "an estimate given before the requirements existed",
+    "a TODO comment that was load-bearing",
+    "the only person who understood it being on holiday",
+    "a quick fix that became permanent",
+    "testing only the path that was expected to work",
+    "the belief that nobody would ever input that",
+    "a config copied from an unrelated project",
+    "the conviction that it could not possibly break",
+    "trusting the happy path a little too much",
+    "the assumption that the docs were current"
+  ];
+
+  var times = [
+    "3:47am", "11:59pm on the last day of the quarter",
+    "precisely during the board demo",
+    "the exact moment the feature was announced on the blog",
+    "30 seconds into the on-call handover",
+    "during a zero-downtime deployment", "when the backup was also running",
+    "at the worst possible moment in the sprint",
+    "while the founder was giving a live demo",
+    "two minutes before the standup", "4:59pm on a Friday",
+    "the instant the metrics dashboard was opened", "during the all-hands",
+    "right after someone said \"it should be fine\"",
+    "mid-migration, naturally", "the moment the customer logged in",
+    "exactly when the alerting was muted for maintenance",
+    "the second the screen-share started",
+    "during the quarterly capacity review", "the night before the audit",
+    "precisely as the contract was being signed"
+  ];
+
+  var resolutions = [
+    // bureaucratic non-answers
+    "A retrospective has been scheduled.",
+    "The relevant stakeholders have been informed.",
+    "This is being treated as a learning opportunity.",
+    "A ticket has been raised with P2 priority.",
+    "The postmortem will be circulated by end of week.",
+    "This falls outside the current sprint scope.",
+    "An RFC is being drafted.",
+    "A working group has been convened.",
+    "The action items have been added to a backlog nobody owns.",
+    "This has been escalated to a committee.",
+    "A follow-up meeting has been scheduled to schedule the follow-up.",
+    "The incident has been assigned a severity and promptly forgotten.",
+    "A Jira epic has been created to track the regret.",
+    "The change board will review this next quarter.",
+    "We have opened a ticket to investigate the ticket.",
+    "A root cause analysis is pending resourcing.",
+    "The runbook will be updated, in theory.",
+    "This has been added to the technical debt register.",
+    "An OKR has been adjusted to make this a success.",
+    // deflection
+    "We are confident this will resolve itself.",
+    "Monitoring is in place.",
+    "This is working as designed.",
+    "We recommend refreshing the page.",
+    "The issue was intermittent and cannot be reproduced.",
+    "Have you tried turning it off and on again?",
+    "No user data was affected (that we can currently confirm).",
+    "We are treating this as a feature.",
+    "It works on the maintainer's machine.",
+    "This is expected behaviour under unexpected conditions.",
+    "The logs have been rotated, conveniently.",
+    "We are unable to reproduce it, which we are choosing to celebrate.",
+    "The metrics look fine from here.",
+    "This is a known issue, now that it has happened.",
+    "Customers have not yet noticed, which buys us time.",
+    "The fix is one line, in a file nobody can find.",
+    "We have decided this is out of scope for reality.",
+    "It degraded gracefully, if you squint.",
+    "We are gathering more data, which is to say none.",
+    "The error is cosmetic, like most of our problems.",
+    // dark-but-harmless absurdism
+    "The affected system has been apologised to.",
+    "The codebase has been reminded of its purpose.",
+    "Management has been notified and has expressed concern.",
+    "We have identified a workaround that introduces only three new issues.",
+    "The issue has been resolved by simply not thinking about it.",
+    "A strongly worded comment has been added to the relevant function.",
+    "The on-call engineer has been thanked for their service.",
+    "The function has been given a stern talking-to.",
+    "We have placed the service on a performance improvement plan.",
+    "A candle has been lit for the affected pods.",
+    "The bug has been promoted to a feature and given a roadmap.",
+    "We have agreed never to speak of this again.",
+    "The cache has been asked nicely to behave.",
+    "The repository has been thanked for its cooperation.",
+    "We have resolved the issue by lowering our expectations.",
+    "The alert has been silenced and emotionally suppressed.",
+    "The deploy has been forgiven but not forgotten.",
+    "We have introduced a second bug to keep the first one company.",
+    "The system has been left a strongly worded note.",
+    "We are monitoring the situation with mild concern and a coffee.",
+    "The incident channel has been archived out of respect.",
+    "A moment of silence was held for the dropped requests.",
+    "The fix has been deployed with fingers firmly crossed."
+  ];
+
+  /* ------------------------------------------------------------------ *
+   * Templates. Each lists the banks it consumes so the combination
+   * count reflects only the banks actually used by that template.
+   * ------------------------------------------------------------------ */
+
+  var BANKS = {
+    subject: subjects,
+    past_verb: pastVerbs,
+    present_state: presentStates,
+    infinitive_verb: infinitiveVerbs,
+    root_cause: rootCauses,
+    time: times,
+    resolution: resolutions
+  };
+
+  var templates = [
+    {
+      text: "{subject} {past_verb} because {root_cause}. {resolution}",
+      uses: ["subject", "past_verb", "root_cause", "resolution"]
+    },
+    {
+      text: "{subject} is {present_state} due to {root_cause}. {resolution}",
+      uses: ["subject", "present_state", "root_cause", "resolution"]
+    },
+    {
+      text: "After careful analysis, {root_cause} caused {subject} to {infinitive_verb}. {resolution}",
+      uses: ["root_cause", "subject", "infinitive_verb", "resolution"]
+    },
+    {
+      text: "The good news: {subject} is fine. The bad news: {root_cause}. {resolution}",
+      uses: ["subject", "root_cause", "resolution"]
+    },
+    {
+      text: "{subject} {past_verb} at {time}, which we believe is related to {root_cause}. {resolution}",
+      uses: ["subject", "past_verb", "time", "root_cause", "resolution"]
+    },
+    {
+      text: "We have identified {root_cause} as the primary contributor to {subject} {ing_verb}. {resolution}",
+      uses: ["root_cause", "subject", "infinitive_verb", "resolution"]
+    },
+    {
+      text: "Preliminary investigations suggest {root_cause} is why {subject} {past_verb}. {resolution}",
+      uses: ["root_cause", "subject", "past_verb", "resolution"]
+    }
+  ];
+
+  /* ------------------------------------------------------------------ *
+   * Gerund map for template 6 (turns the infinitive phrase into "-ing").
+   * Built from the first word of every infinitive so it is always exact.
+   * ------------------------------------------------------------------ */
+
+  var gerundFirst = {
+    fail: "failing", restart: "restarting", invalidate: "invalidating",
+    reject: "rejecting", consume: "consuming", question: "questioning",
+    lose: "losing", forget: "forgetting", process: "processing",
+    "return": "returning", log: "logging", crash: "crashing",
+    ignore: "ignoring", duplicate: "duplicating", retry: "retrying",
+    deadlock: "deadlocking", leak: "leaking", corrupt: "corrupting",
+    swallow: "swallowing", escalate: "escalating", round: "rounding",
+    serve: "serving", panic: "panicking", block: "blocking",
+    overwrite: "overwriting", respond: "responding", drop: "dropping",
+    recompute: "recomputing", hang: "hanging", emit: "emitting",
+    reorder: "reordering"
+  };
+
+  function toGerund(phrase) {
+    var words = phrase.split(" ");
+    var first = words[0];
+    words[0] = gerundFirst[first] ||
+      (first.charAt(first.length - 1) === "e"
+        ? first.slice(0, -1) + "ing"
+        : first + "ing");
+    return words.join(" ");
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Combination count: sum over templates of the product of bank sizes
+   * the template actually uses.
+   * ------------------------------------------------------------------ */
+
+  function combinationCount() {
+    var total = 0;
+    for (var i = 0; i < templates.length; i++) {
+      var product = 1;
+      var uses = templates[i].uses;
+      for (var j = 0; j < uses.length; j++) {
+        product *= BANKS[uses[j]].length;
+      }
+      total += product;
+    }
+    return total;
+  }
+
+  var TOTAL_COMBINATIONS = combinationCount();
+
+  /* ------------------------------------------------------------------ *
+   * State: a full set of indices (one per bank) plus a template index.
+   * Encoding every index keeps decode robust regardless of template.
+   * Order: t . subject . past . present . infinitive . root . time . res
+   * ------------------------------------------------------------------ */
+
+  function randInt(n) { return Math.floor(Math.random() * n); }
+
+  function randomState() {
+    return {
+      t: randInt(templates.length),
+      subject: randInt(subjects.length),
+      past_verb: randInt(pastVerbs.length),
+      present_state: randInt(presentStates.length),
+      infinitive_verb: randInt(infinitiveVerbs.length),
+      root_cause: randInt(rootCauses.length),
+      time: randInt(times.length),
+      resolution: randInt(resolutions.length)
+    };
+  }
+
+  function encodeState(s) {
+    return [
+      s.t, s.subject, s.past_verb, s.present_state, s.infinitive_verb,
+      s.root_cause, s.time, s.resolution
+    ].map(function (n) { return n.toString(36); }).join(".");
+  }
+
+  function clampIndex(value, length) {
+    var n = parseInt(value, 36);
+    if (isNaN(n) || n < 0) { n = 0; }
+    return n % length;
+  }
+
+  function decodeState(hash) {
+    var parts = hash.split(".");
+    if (parts.length !== 8) { return null; }
+    return {
+      t: clampIndex(parts[0], templates.length),
+      subject: clampIndex(parts[1], subjects.length),
+      past_verb: clampIndex(parts[2], pastVerbs.length),
+      present_state: clampIndex(parts[3], presentStates.length),
+      infinitive_verb: clampIndex(parts[4], infinitiveVerbs.length),
+      root_cause: clampIndex(parts[5], rootCauses.length),
+      time: clampIndex(parts[6], times.length),
+      resolution: clampIndex(parts[7], resolutions.length)
+    };
+  }
+
+  function buildExcuse(s) {
+    var values = {
+      subject: subjects[s.subject],
+      past_verb: pastVerbs[s.past_verb],
+      present_state: presentStates[s.present_state],
+      infinitive_verb: infinitiveVerbs[s.infinitive_verb],
+      ing_verb: toGerund(infinitiveVerbs[s.infinitive_verb]),
+      root_cause: rootCauses[s.root_cause],
+      time: times[s.time],
+      resolution: resolutions[s.resolution]
+    };
+    var text = templates[s.t].text.replace(/\{(\w+)\}/g, function (match, key) {
+      return Object.prototype.hasOwnProperty.call(values, key)
+        ? values[key]
+        : match;
+    });
+    // Capitalise the first character of the assembled sentence.
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * DOM wiring
+   * ------------------------------------------------------------------ */
+
+  var excuseBox = document.getElementById("excuseBox");
+  var excuseText = document.getElementById("excuseText");
+  var counter = document.getElementById("counter");
+  var generateBtn = document.getElementById("generateBtn");
+  var copyBtn = document.getElementById("copyBtn");
+  var shareLink = document.getElementById("shareLink");
+
+  var currentState = null;
+  var currentExcuse = "";
+  var count = 0;
+
+  function formatNumber(n) {
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  function updateCounter() {
+    counter.textContent =
+      "[ excuse #" + count + " of ~" + formatNumber(TOTAL_COMBINATIONS) +
+      " possible ]";
+  }
+
+  function showExcuse(s, increment) {
+    currentState = s;
+    currentExcuse = buildExcuse(s);
+    excuseBox.classList.remove("placeholder");
+    excuseText.textContent = currentExcuse;
+
+    // Re-trigger the fade-in animation.
+    excuseText.classList.remove("reveal");
+    void excuseText.offsetWidth; // force reflow
+    excuseText.classList.add("reveal");
+
+    if (increment) { count += 1; }
+    updateCounter();
+
+    location.hash = encodeState(s);
+  }
+
+  function generate() {
+    showExcuse(randomState(), true);
+  }
+
+  function showPlaceholder() {
+    count = 0;
+    updateCounter();
+  }
+
+  /* ----- events ----- */
+
+  generateBtn.addEventListener("click", generate);
+
+  function copyText(text, onDone) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(onDone, function () {
+        fallbackCopy(text);
+        onDone();
+      });
+    } else {
+      fallbackCopy(text);
+      onDone();
+    }
+  }
+
+  function fallbackCopy(text) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    } catch (e) {
+      // Clipboard simply unavailable; nothing more we can do.
+    }
+  }
+
+  copyBtn.addEventListener("click", function () {
+    if (!currentExcuse) { return; }
+    copyText(currentExcuse, function () {
+      var original = "COPY TO CLIPBOARD";
+      copyBtn.textContent = "COPIED ✓";
+      setTimeout(function () { copyBtn.textContent = original; }, 1500);
+    });
+  });
+
+  function doShare() {
+    if (!currentState) { generate(); }
+    var url = location.href;
+    copyText(url, function () {
+      var original = "SHARE THIS EXCUSE →";
+      shareLink.textContent = "LINK COPIED ✓";
+      setTimeout(function () { shareLink.textContent = original; }, 1500);
+    });
+  }
+
+  shareLink.addEventListener("click", doShare);
+  shareLink.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      doShare();
+    }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    var active = document.activeElement;
+    if (active === copyBtn || active === shareLink) { return; }
+    if (e.key === " " || e.key === "Enter" || e.code === "Space") {
+      e.preventDefault();
+      generate();
+    }
+  });
+
+  /* ----- initial load ----- */
+
+  function init() {
+    var hash = location.hash.replace(/^#/, "");
+    if (hash) {
+      var decoded = decodeState(hash);
+      if (decoded) {
+        count = 1;
+        showExcuse(decoded, false);
+        return;
+      }
+    }
+    showPlaceholder();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
