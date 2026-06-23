@@ -171,6 +171,25 @@
     color: var(--cool); font-weight: 700; cursor: pointer;
     background: none; border: none; font-family: inherit; font-size: 12px;
   }
+  .opts {
+    display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: flex-end;
+    margin-top: 16px; padding-top: 16px;
+    border-top: 1px solid #4a3f7d;
+  }
+  .opt {
+    display: flex; flex-direction: column; gap: 6px;
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .opt.grow { flex: 1; min-width: 150px; }
+  .opt select {
+    background: var(--panel); color: var(--ink);
+    border: 2px solid #4a3f7d; border-radius: 10px;
+    padding: 7px 10px; font-size: 13px; font-weight: 700;
+    font-family: inherit; cursor: pointer;
+  }
+  .opt input[type="range"] { accent-color: var(--accent); cursor: pointer; width: 100%; }
+  .tone-ends { display: flex; justify-content: space-between; font-size: 9px; color: var(--muted); }
   .shake { animation: shake 0.4s; }
   @keyframes shake {
     0%,100% { transform: translateX(0); }
@@ -220,6 +239,19 @@
     <div class="controls">
       <button class="lever" id="lever">⚡ PULL THE LEVER</button>
       <button class="copy" id="copy">copy</button>
+    </div>
+
+    <div class="opts" id="opts">
+      <label class="opt grow">theme
+        <select id="category">
+          <option value="all">everything</option>
+          <option value="cosmic">cosmic</option>
+          <option value="ancient">ancient / cursed</option>
+          <option value="process">process</option>
+          <option value="technical">technical</option>
+          <option value="absurd">absurd</option>
+        </select>
+      </label>
     </div>
 
     <div class="footer">
@@ -351,14 +383,45 @@
   const sigOf = st => st.t + "|" + st.cause + "|" + st.verb;
   const partsOf = st => ({ subj: subjects[st.subj], verb: verbs[st.verb], state: states[st.state], cause: causes[st.cause], res: resolutions[st.res] });
 
+  // --- Theme / category filtering ---------------------------------------
+  let currentCategory = "all";
+  const CATEGORIES = {
+    all:       { re: null },
+    cosmic:    { re: /universe|cosmic|quantum|gravity|black hole|solar|\bmoon\b|mercury|thermodynamic|entropy|multiverse|wormhole|simulation|speed of light|dark matter|asteroid|\bspace\b|\bstars?\b|planet|constellation|big bang|heat death|leap second/i },
+    ancient:   { re: /hieroglyph|pharaoh|pyramid|ancient|\brune|prophecy|\bcurse|scroll|rosetta|cave painting|\btomb|dead language|recorded history|sacred|s[eé]ance|exorcist|ritual|summon|spirit|haunt|eldritch|forbidden|incense|\bward\b|\bmagic|cursed/i },
+    process:   { re: /sprint|ticket|stakeholder|postmortem|\brfc\b|\bcab\b|backlog|retro|standup|runbook|change board|change advisory|estimate|requirement|definition of done|acceptance|on-call|\bokr\b|jira|\bepic\b|meeting|approval|sign-off|\bscope|planning poker|communications|incident/i },
+    technical: { re: /cache|regex|yaml|json|config|\bdns\b|certificate|timeout|\bnull\b|\bindex\b|migration|deploy|pipeline|race condition|memory|dependenc|version|\bport\b|unicode|byte order|overflow|clock|retry|queue|\block|thread|deadlock|schema|environment variable|library|connection pool|lockfile/i },
+    absurd:    { re: /printer|pigeon|\bcat\b|gremlin|wizard|rubber duck|magic smoke|coffee machine|spreadsheet|horoscope|union|religion|podcast|bribe|blockchain|freelance|farm upstate|combust|duel|witness protection|streams|sentient/i }
+  };
+  // Precompute, for each category, the matching indices within each bank.
+  for (const cat of Object.values(CATEGORIES)) {
+    if (!cat.re) continue;
+    cat.pools = {};
+    for (const [k, arr] of Object.entries(BANKS)) {
+      cat.pools[k] = arr.map((t, i) => cat.re.test(t) ? i : -1).filter(i => i >= 0);
+    }
+  }
+  // Draw from the themed pool when it has enough entries; otherwise fall back
+  // to the whole bank so generation never starves.
+  function poolFor(bankName) {
+    const cat = CATEGORIES[currentCategory];
+    if (!cat || !cat.pools) return null;
+    const pool = cat.pools[bankName];
+    return (pool && pool.length >= 3) ? pool : null;
+  }
+  function pickIdx(rng, bankName, len) {
+    const pool = poolFor(bankName);
+    return pool ? pool[rint(rng, pool.length)] : rint(rng, len);
+  }
+
   function buildState(rng) {
     return {
       t: rint(rng, templates.length),
-      subj: rint(rng, subjects.length),
-      verb: rint(rng, verbs.length),
-      state: rint(rng, states.length),
-      cause: rint(rng, causes.length),
-      res: rint(rng, resolutions.length)
+      subj: pickIdx(rng, "subj", subjects.length),
+      verb: pickIdx(rng, "verb", verbs.length),
+      state: pickIdx(rng, "state", states.length),
+      cause: pickIdx(rng, "cause", causes.length),
+      res: pickIdx(rng, "res", resolutions.length)
     };
   }
 
@@ -427,6 +490,11 @@
   }
 
   $("lever").addEventListener("click", generate);
+  if ($("category")) $("category").addEventListener("change", e => {
+    currentCategory = e.target.value;
+    recent.length = 0;      // small themed pools should not fight the no-repeat guard
+    generate();
+  });
   $("copy").addEventListener("click", () => {
     navigator.clipboard.writeText($("excuse").textContent).then(()=>{
       const b = $("copy"); const t = b.textContent; b.textContent = "copied ✓";
