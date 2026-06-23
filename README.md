@@ -1,6 +1,6 @@
-# 🔥 Excuse Machine
+<div align="center">
 
-![Excuse Machine](demo.png)
+# 🔥 Excuse Machine
 
 ![builds](https://img.shields.io/badge/builds-on%20my%20machine-brightgreen)
 ![dependencies](https://img.shields.io/badge/dependencies-0%20(we%20checked%20twice)-blue)
@@ -11,16 +11,16 @@
 
 Pull the lever. Blame the void.
 
-It's a little machine that invents reasons why everything is on fire. The build broke, the deploy melted, prod is doing something interpretive dance — hit the button and it'll hand you something convincing-ish to say in the incident channel. Now with ~200 billion possible excuses, ranging from "trailing whitespace in a YAML file" to "a pharaoh's curse on the legacy module."
+![Excuse Machine](demo.png)
 
-You can dial the theme (cosmic, ancient, cursed, technical…), slide the tone from *corporate* to *fully unhinged*, save your favourites, copy them straight into Slack / a commit message / Jira / an out-of-office reply, and share a link that hands your friend the exact same disaster.
+</div>
 
-## Have a go
+## Run it
 
-Download `index.html`, double-click it. That's the whole install guide. No build, no `npm`, no dependencies, no second guide. Just a browser and a healthy relationship with denial.
+Download `index.html`, double-click it. Congratulations, it's in production.
 
 ## Made of
 
-One `index.html`. HTML, CSS, a sprinkle of JavaScript, and zero dependencies (we're very proud of that last bit).
+One `index.html`. Zero dependencies. Like your incident response plan.
 
-> ⚠️ For entertainment only. Please do not use these in an actual postmortem. Okay maybe one.
+> ⚠️ Not for use in real postmortems. The void already knows what you did.
