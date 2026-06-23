@@ -256,6 +256,15 @@
         <input type="range" id="tone" min="0" max="100" value="50">
         <span class="tone-ends"><span>corporate</span><span>unhinged</span></span>
       </label>
+      <label class="opt">copy as
+        <select id="format">
+          <option value="plain">plain text</option>
+          <option value="slack">slack status</option>
+          <option value="commit">commit message</option>
+          <option value="jira">jira comment</option>
+          <option value="ooo">out-of-office</option>
+        </select>
+      </label>
     </div>
 
     <div class="footer">
@@ -512,6 +521,19 @@
     render(st, severityFor(st));
   }
 
+  // Wrap the current excuse in the format the user asked to copy.
+  function formatExcuse(text, fmt) {
+    const stripDot = s => s.replace(/\.\s*$/, "");
+    const deCap = s => s.charAt(0).toLowerCase() + s.slice(1);
+    switch (fmt) {
+      case "slack":  return ":fire: *Excuse Machine:* " + text;
+      case "commit": return 'git commit -m "fix: ' + deCap(stripDot(text)).replace(/"/g, "'") + '"';
+      case "jira":   return "h3. Incident summary\n\n" + text + "\n\n*Status:* under review";
+      case "ooo":    return "I'm currently unavailable. " + text;
+      default:       return text;
+    }
+  }
+
   $("lever").addEventListener("click", generate);
   if ($("category")) $("category").addEventListener("change", e => {
     currentCategory = e.target.value;
@@ -523,10 +545,11 @@
     $("tone").addEventListener("change", () => generate());
   }
   $("copy").addEventListener("click", () => {
-    navigator.clipboard.writeText($("excuse").textContent).then(()=>{
-      const b = $("copy"); const t = b.textContent; b.textContent = "copied ✓";
-      setTimeout(()=>b.textContent = t, 1500);
-    });
+    const fmt = $("format") ? $("format").value : "plain";
+    const out = formatExcuse($("excuse").textContent, fmt);
+    const done = () => { const b = $("copy"); const t = b.textContent; b.textContent = "copied ✓"; setTimeout(() => b.textContent = t, 1500); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(out).then(done, done);
+    else done();
   });
   $("share").addEventListener("click", () => {
     const b = $("share"); const t = b.textContent; b.textContent = "↗ link copied";
