@@ -336,30 +336,65 @@
   ];
   const sevTags = ["minor hiccup","noticeable wobble","stakeholders are asking","company-wide outage","career-ending event"];
 
-  const pick = a => a[Math.floor(Math.random()*a.length)];
-  const combos = templates.length * subjects.length * verbs.length * causes.length * resolutions.length;
-
-  let score = 0;
+  const BANKS = { subj: subjects, verb: verbs, state: states, cause: causes, res: resolutions };
   const $ = id => document.getElementById(id);
-  $("combos").textContent = "~" + combos.toLocaleString() + " excuses";
 
+  const combos = templates.length * subjects.length * verbs.length * causes.length * resolutions.length;
+  $("combos").textContent = "~" + combos.toLocaleString() + " excuses";
   console.log("Excuse Machine combinations:", (templates.length * subjects.length * verbs.length * states.length * causes.length * resolutions.length).toLocaleString());
 
-  function generate() {
-    const parts = { subj: pick(subjects), verb: pick(verbs), state: pick(states), cause: pick(causes), res: pick(resolutions) };
-    const text = pick(templates)(parts);
+  let score = 0;
+  let current = null;     // current excuse state: { t, subj, verb, state, cause, res }
+  const recent = [];      // recent signatures, to avoid immediate repeats
+
+  const rint = (rng, n) => Math.floor(rng() * n);
+  const sigOf = st => st.t + "|" + st.cause + "|" + st.verb;
+  const partsOf = st => ({ subj: subjects[st.subj], verb: verbs[st.verb], state: states[st.state], cause: causes[st.cause], res: resolutions[st.res] });
+
+  function buildState(rng) {
+    return {
+      t: rint(rng, templates.length),
+      subj: rint(rng, subjects.length),
+      verb: rint(rng, verbs.length),
+      state: rint(rng, states.length),
+      cause: rint(rng, causes.length),
+      res: rint(rng, resolutions.length)
+    };
+  }
+
+  // Reroll a few times so the same template/cause/verb does not appear back-to-back.
+  function pickState(rng, allowRepeat) {
+    let st = buildState(rng);
+    if (!allowRepeat) {
+      let tries = 0;
+      while (recent.includes(sigOf(st)) && tries < 12) { st = buildState(rng); tries++; }
+    }
+    return st;
+  }
+
+  function severityFor(st) { return Math.floor(Math.random() * 5) + 1; }   // refined later
+
+  function render(st, sev) {
+    current = st;
     const ex = $("excuse");
-    ex.textContent = text;
+    ex.textContent = templates[st.t](partsOf(st));
     ex.classList.remove("reveal"); void ex.offsetWidth; ex.classList.add("reveal");
-    score++;
-    $("score").textContent = String(score).padStart(2,"0");
-    const sev = Math.floor(Math.random()*5)+1;
-    document.querySelectorAll(".pip").forEach((p,i)=>p.classList.toggle("on", i<sev));
-    $("sevtag").textContent = sevTags[sev-1];
+    document.querySelectorAll(".pip").forEach((p, i) => p.classList.toggle("on", i < sev));
+    $("sevtag").textContent = sevTags[sev - 1];
     if (sev === 5) {
       const cab = $("cabinet");
       cab.classList.remove("shake"); void cab.offsetWidth; cab.classList.add("shake");
     }
+    recent.push(sigOf(st));
+    if (recent.length > 8) recent.shift();
+    return ex.textContent;
+  }
+
+  function generate() {
+    const st = pickState(Math.random, false);
+    score++;
+    $("score").textContent = String(score).padStart(2, "0");
+    render(st, severityFor(st));
   }
 
   $("lever").addEventListener("click", generate);
