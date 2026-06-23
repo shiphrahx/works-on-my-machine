@@ -179,6 +179,13 @@
     60% { transform: translateX(-4px); }
     80% { transform: translateX(4px); }
   }
+  @media (prefers-reduced-motion: reduce) {
+    .excuse.reveal { animation: none; }
+    .shake { animation: none; }
+    .pip { transition: none; }
+    .lever, .copy, .pip { transition: none; }
+    * { scroll-behavior: auto; }
+  }
 </style>
 </head>
 <body>
