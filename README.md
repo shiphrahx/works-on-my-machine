@@ -1,49 +1,26 @@
-# excuse-generator
+# 🔥 Excuse Machine
 
-> A single-file static web app that assembles dry, self-aware excuses for why
-> something in software is broken, delayed, or on fire.
+![Excuse Machine](demo.png)
 
-## Live demo
+![builds](https://img.shields.io/badge/builds-on%20my%20machine-brightgreen)
+![dependencies](https://img.shields.io/badge/dependencies-0%20(we%20checked%20twice)-blue)
+![excuses](https://img.shields.io/badge/excuses-200%20billion%2B-ffd23f)
+![bugs](https://img.shields.io/badge/bugs-they're%20features-ff5d73)
+![blame](https://img.shields.io/badge/blame-the%20void-9b59b6)
+![ship it](https://img.shields.io/badge/status-ship%20it%20%F0%9F%A4%9E-blueviolet)
 
-`https://yourusername.github.io/excuse-generator`
+Pull the lever. Blame the void.
 
-## Screenshot
+It's a little machine that invents reasons why everything is on fire. The build broke, the deploy melted, prod is doing something interpretive dance — hit the button and it'll hand you something convincing-ish to say in the incident channel. Now with ~200 billion possible excuses, ranging from "trailing whitespace in a YAML file" to "a pharaoh's curse on the legacy module."
 
-<!-- add screenshot.png -->
+You can dial the theme (cosmic, ancient, cursed, technical…), slide the tone from *corporate* to *fully unhinged*, save your favourites, copy them straight into Slack / a commit message / Jira / an out-of-office reply, and share a link that hands your friend the exact same disaster.
 
-## What it is
+## Have a go
 
-A developer excuse generator. One button click assembles a randomly composed
-excuse from a template engine — seven sentence templates layered over seven
-word banks — producing roughly 328 million possible excuses. The humour is
-dark, dry, and self-aware: it punches at software industry absurdity, process,
-and tooling, never at people.
+Download `index.html`, double-click it. That's the whole install guide. No build, no `npm`, no dependencies, no second guide. Just a browser and a healthy relationship with denial.
 
-## Run it
+## Made of
 
-Clone the repo and open `index.html` in a browser. No install, no build step,
-no dependencies.
+One `index.html`. HTML, CSS, a sprinkle of JavaScript, and zero dependencies (we're very proud of that last bit).
 
-## Stack
-
-HTML, CSS, JavaScript — zero dependencies.
-
-## Features
-
-- **Template engine** — sentences are assembled at runtime from interchangeable
-  parts rather than picked from a flat list of canned lines.
-- **Thousands of combinations** — seven templates over seven word banks yield
-  hundreds of millions of distinct excuses (the live count is computed in the
-  app from the actual array sizes).
-- **Shareable URLs** — every excuse is encoded into the URL hash, so a link
-  reproduces the exact same excuse for whoever opens it.
-- **Keyboard shortcut** — press Space or Enter to generate a new excuse.
-- **Copy to clipboard** — one click copies the current excuse.
-
-## Skills demonstrated
-
-- DOM manipulation
-- Combinatorial template systems
-- URL state serialisation
-- Zero-dependency JavaScript
-- Shipping a finished and documented project
+> ⚠️ For entertainment only. Please do not use these in an actual postmortem. Okay maybe one.
