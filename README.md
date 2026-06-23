@@ -11,13 +11,17 @@
 
 Pull the lever. Blame the void.
 
+### ▶ [Play it here](https://shiphrahx.github.io/works-on-my-machine/)
+
 ![Excuse Machine](demo.png)
 
 </div>
 
+A button that generates billions of plausible-sounding excuses for why your software is on fire, so you don't have to admit it was you.
+
 ## Run it
 
-Download `index.html`, double-click it. Congratulations, it's in production.
+Just [open it in your browser](https://shiphrahx.github.io/works-on-my-machine/) — or download `index.html` and double-click it. Congratulations, it's in production.
 
 ## Made of
 
