@@ -190,6 +190,28 @@
   }
   .opt input[type="range"] { accent-color: var(--accent); cursor: pointer; width: 100%; }
   .tone-ends { display: flex; justify-content: space-between; font-size: 9px; color: var(--muted); }
+  .footer-actions { display: flex; gap: 14px; }
+  .panel {
+    margin-top: 14px; padding: 16px;
+    background: var(--panel); border: 2px solid #4a3f7d; border-radius: 16px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .panel[hidden] { display: none; }
+  .panel h3 { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .list-item { display: flex; align-items: stretch; gap: 8px; }
+  .list-text {
+    flex: 1; text-align: left; background: var(--bg2); color: var(--ink);
+    border: 1px solid #4a3f7d; border-radius: 10px; padding: 8px 10px;
+    font-family: inherit; font-size: 12px; line-height: 1.35; cursor: pointer;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .list-text:hover { border-color: var(--accent); }
+  .list-x {
+    background: none; border: 1px solid #4a3f7d; border-radius: 10px;
+    color: var(--hot); cursor: pointer; padding: 0 10px; font-family: inherit;
+  }
+  .list-empty { font-size: 12px; color: var(--muted); padding: 4px 0; }
   .shake { animation: shake 0.4s; }
   @keyframes shake {
     0%,100% { transform: translateX(0); }
@@ -269,7 +291,22 @@
 
     <div class="footer">
       <span class="count">🎲 <span id="combos">—</span> possible</span>
-      <button class="share" id="share">↗ share this disaster</button>
+      <span class="footer-actions">
+        <button class="share" id="fav">☆ save</button>
+        <button class="share" id="listToggle">🗂 saved</button>
+        <button class="share" id="share">↗ share</button>
+      </span>
+    </div>
+
+    <div class="panel" id="panel" hidden>
+      <div>
+        <h3>★ Favourites</h3>
+        <ul id="favList" class="list"></ul>
+      </div>
+      <div>
+        <h3>🕑 Recent</h3>
+        <ul id="histList" class="list"></ul>
+      </div>
     </div>
   </div>
 
@@ -511,6 +548,8 @@
     if (recent.length > 8) recent.shift();
     try { history.replaceState(null, "", "#" + encodeState(st)); }
     catch (e) { location.hash = encodeState(st); }
+    recordHistory(encodeState(st));
+    updateFavBtn();
     return ex.textContent;
   }
 
@@ -533,6 +572,73 @@
       default:       return text;
     }
   }
+
+  // --- Favourites (persisted) & recent history (session) ---------------
+  const FAV_KEY = "em.favs";
+  const historyCodes = [];   // recent excuse codes, most-recent-first
+  const loadFavs = () => { try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch (e) { return []; } };
+  const saveFavs = a => { try { localStorage.setItem(FAV_KEY, JSON.stringify(a)); } catch (e) {} };
+  let favs = loadFavs();
+
+  function previewOf(code) {
+    const st = decodeState(code);
+    return st ? templates[st.t](partsOf(st)) : "(broken excuse)";
+  }
+  function recordHistory(code) {
+    const i = historyCodes.indexOf(code);
+    if (i !== -1) historyCodes.splice(i, 1);
+    historyCodes.unshift(code);
+    if (historyCodes.length > 12) historyCodes.pop();
+  }
+  function updateFavBtn() {
+    const b = $("fav"); if (!b) return;
+    b.textContent = (current && favs.includes(encodeState(current))) ? "★ saved" : "☆ save";
+  }
+  function makeItem(code, withRemove) {
+    const li = document.createElement("li");
+    li.className = "list-item";
+    const txt = document.createElement("button");
+    txt.className = "list-text";
+    txt.textContent = previewOf(code);
+    txt.addEventListener("click", () => { const st = decodeState(code); if (st) render(st, severityFor(st)); });
+    li.appendChild(txt);
+    if (withRemove) {
+      const x = document.createElement("button");
+      x.className = "list-x"; x.textContent = "✕"; x.title = "remove";
+      x.addEventListener("click", () => { favs = favs.filter(c => c !== code); saveFavs(favs); updateFavBtn(); renderLists(); });
+      li.appendChild(x);
+    }
+    return li;
+  }
+  function fillList(el, codes, withRemove, emptyMsg) {
+    if (!el) return;
+    el.textContent = "";
+    if (!codes.length) {
+      const li = document.createElement("li");
+      li.className = "list-empty"; li.textContent = emptyMsg;
+      el.appendChild(li);
+      return;
+    }
+    codes.forEach(c => el.appendChild(makeItem(c, withRemove)));
+  }
+  function renderLists() {
+    fillList($("favList"), favs, true, "nothing saved yet");
+    fillList($("histList"), historyCodes, false, "no excuses yet");
+  }
+
+  if ($("fav")) $("fav").addEventListener("click", () => {
+    if (!current) return;
+    const code = encodeState(current);
+    if (favs.includes(code)) favs = favs.filter(c => c !== code);
+    else favs.unshift(code);
+    if (favs.length > 50) favs = favs.slice(0, 50);
+    saveFavs(favs); updateFavBtn(); renderLists();
+  });
+  if ($("listToggle")) $("listToggle").addEventListener("click", () => {
+    const p = $("panel"); if (!p) return;
+    p.hidden = !p.hidden;
+    if (!p.hidden) renderLists();
+  });
 
   $("lever").addEventListener("click", generate);
   if ($("category")) $("category").addEventListener("change", e => {
