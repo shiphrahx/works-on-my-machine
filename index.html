@@ -241,7 +241,15 @@
     s => `${s.subj} is ${s.state} due to ${s.cause}. ${s.res}`,
     s => `After careful analysis, ${s.cause} caused ${s.subj.toLowerCase()} to fall over. ${s.res}`,
     s => `The good news: ${s.subj.toLowerCase()} is fine. The bad news: ${s.cause}. ${s.res}`,
-    s => `Preliminary investigations suggest ${s.cause} is why ${s.subj.toLowerCase()} ${s.verb}. ${s.res}`
+    s => `Preliminary investigations suggest ${s.cause} is why ${s.subj.toLowerCase()} ${s.verb}. ${s.res}`,
+    s => `${s.subj} ${s.verb}. ${s.res}`,
+    s => `It turns out ${s.subj.toLowerCase()} ${s.verb} the moment ${s.cause} became unavoidable. ${s.res}`,
+    s => `Root cause: ${s.cause}. Impact: ${s.subj.toLowerCase()} ${s.verb}. ${s.res}`,
+    s => `Nobody is quite sure why, but ${s.subj.toLowerCase()} is ${s.state}. ${s.res}`,
+    s => `In retrospect, ${s.cause} meant ${s.subj.toLowerCase()} was always going to be ${s.state}. ${s.res}`,
+    s => `${s.subj} ${s.verb} again — this time blamed on ${s.cause}. ${s.res}`,
+    s => `We regret to report that ${s.subj.toLowerCase()} ${s.verb} due to ${s.cause}. ${s.res}`,
+    s => `Status update: ${s.subj.toLowerCase()} is ${s.state}, and ${s.cause} is not helping. ${s.res}`
   ];
   const verbs = [
     // base
