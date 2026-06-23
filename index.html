@@ -372,6 +372,24 @@
     return st;
   }
 
+  // Compact, reproducible encoding of a state into the URL hash.
+  function encodeState(st) {
+    return [st.t, st.subj, st.verb, st.state, st.cause, st.res].map(n => n.toString(36)).join(".");
+  }
+  function clampIdx(v, len) { let n = parseInt(v, 36); if (isNaN(n) || n < 0) n = 0; return n % len; }
+  function decodeState(h) {
+    const p = String(h).split(".");
+    if (p.length !== 6) return null;
+    return {
+      t: clampIdx(p[0], templates.length),
+      subj: clampIdx(p[1], subjects.length),
+      verb: clampIdx(p[2], verbs.length),
+      state: clampIdx(p[3], states.length),
+      cause: clampIdx(p[4], causes.length),
+      res: clampIdx(p[5], resolutions.length)
+    };
+  }
+
   function severityFor(st) { return Math.floor(Math.random() * 5) + 1; }   // refined later
 
   function render(st, sev) {
@@ -387,6 +405,8 @@
     }
     recent.push(sigOf(st));
     if (recent.length > 8) recent.shift();
+    try { history.replaceState(null, "", "#" + encodeState(st)); }
+    catch (e) { location.hash = encodeState(st); }
     return ex.textContent;
   }
 
@@ -414,6 +434,19 @@
       e.preventDefault(); generate();
     }
   });
+
+  // On load, reproduce the excuse encoded in the URL hash (if any).
+  function initFromHash() {
+    const h = location.hash.replace(/^#/, "");
+    if (!h) return false;
+    const st = decodeState(h);
+    if (!st) return false;
+    score = 1;
+    $("score").textContent = "01";
+    render(st, severityFor(st));
+    return true;
+  }
+  initFromHash();
 </script>
 </body>
 </html>
