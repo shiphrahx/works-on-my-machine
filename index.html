@@ -390,7 +390,16 @@
     };
   }
 
-  function severityFor(st) { return Math.floor(Math.random() * 5) + 1; }   // refined later
+  // Severity is derived from the chosen words, so it is meaningful and
+  // reproduces identically from a shared link.
+  const SEVERE_RE = /heat death|black hole|wormhole|\buniverse\b|career-ending|company-wide|bankrupt|combust|portal|ancient evil|catastroph|exorcist|sacrifice|\bcurse[ds]?\b|seize power|on fire|\boutage\b|production|pharaoh|multiverse|big bang|\bhaunt|nuclear|apocalyp|strike|seized|deprecated the team|legal|resignation/gi;
+  const CALM_RE = /whitespace|semicolon|\btypo\b|cosmetic|localhost|\bminor\b|\bcomment\b|\blinter\b|trailing|\bemoji\b|\btabs?\b|\bspaces\b|refresh|known issue|working as designed|degraded gracefully/gi;
+  const countMatches = (re, s) => { const m = s.match(re); return m ? m.length : 0; };
+  function severityFor(st) {
+    const blob = (verbs[st.verb] + " " + causes[st.cause] + " " + subjects[st.subj] + " " + states[st.state] + " " + resolutions[st.res]).toLowerCase();
+    let s = 3 + countMatches(SEVERE_RE, blob) - countMatches(CALM_RE, blob);
+    return Math.max(1, Math.min(5, s));
+  }
 
   function render(st, sev) {
     current = st;
